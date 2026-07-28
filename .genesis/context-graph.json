@@ -1,0 +1,16 @@
+{
+  "$comment": "Per-project causal/dependency graph. nodes=modules/files, edges=[cause,effect] (cause is imported-by effect), invariants=health rules the L4 verifier checks before declaring done. Regenerate the skeleton with tools/graphizer.mjs; add invariants BY HAND.",
+  "project": "{{PROJECT_NAME}}",
+  "generated": "{{TIMESTAMP}}",
+  "nodes": [],
+  "edges": [],
+  "invariants": [
+    "Domain layer never imports infrastructure code.",
+    "Every outbound LLM, vector database, and external API request has timeout and retry protection.",
+    "Long-term memory retrieval always passes through semantic relevance scoring before reaching the prompt builder."
+  ],
+  "freeze_boundary": [
+    "$comment: globs the driver may edit; everything else is off-limits without explicit user request",
+    "src/**"
+  ]
+}
