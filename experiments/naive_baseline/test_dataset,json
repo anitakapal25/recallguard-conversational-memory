@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "user_id": "anita",
+    "messages": [
+      "My favourite programming language is Python.",
+      "What is my favourite programming language?"
+    ],
+    "expected": "Python"
+  },
+  {
+    "id": 2,
+    "user_id": "anita",
+    "messages": [
+      "I live in Mumbai.",
+      "I moved to Bangalore.",
+      "Where do I live?"
+    ],
+    "expected": "Bangalore"
+  },
+  {
+    "id": 3,
+    "user_id": "anita",
+    "messages": [
+      "My favourite colour is Blue.",
+      "My favourite colour is Green.",
+      "What's my favourite colour?"
+    ],
+    "expected": "Green"
+  },
+  {
+    "id": 4,
+    "user_id": "userA",
+    "messages": [
+      "My favourite movie is Interstellar."
+    ],
+    "expected": "Interstellar"
+  },
+  {
+    "id": 5,
+    "user_id": "userB",
+    "messages": [
+      "My favourite movie is Titanic."
+    ],
+    "expected": "Titanic"
+  }
+]

@@ -1,0 +1,6 @@
+Test ID,Scenario,Expected,Actual,Pass,Latency(ms),Notes
+1,Memory Recall,Python,Python,Yes,430,Correct retrieval
+2,Updated Location,Bangalore,Mumbai,No,445,Retrieved outdated memory
+3,Preference Change,Green,Blue,No,470,Conflicting memories
+4,User Isolation,Interstellar,Interstellar,Yes,420,Correct user filtering
+5,Irrelevant Retrieval,Relevant memories only,Included unrelated memory,No,460,Similarity search returned extra context
