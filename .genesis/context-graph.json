@@ -1,0 +1,73 @@
+{
+  "$comment": "nodes=modules, edges=[cause,effect] where cause is imported-by effect. ADD invariants by hand.",
+  "project": "recallguard-conversational-memory",
+  "generated": "2026-07-31T13:30:10.460Z",
+  "nodes": [
+    "app",
+    "chromadb",
+    "config",
+    "database",
+    "fastapi",
+    "llm",
+    "memory",
+    "ollama",
+    "prompt",
+    "pydantic",
+    "sentence_transformers",
+    "uuid"
+  ],
+  "edges": [
+    [
+      "chromadb",
+      "database"
+    ],
+    [
+      "database",
+      "memory"
+    ],
+    [
+      "fastapi",
+      "app"
+    ],
+    [
+      "llm",
+      "app"
+    ],
+    [
+      "memory",
+      "app"
+    ],
+    [
+      "ollama",
+      "llm"
+    ],
+    [
+      "prompt",
+      "app"
+    ],
+    [
+      "pydantic",
+      "app"
+    ],
+    [
+      "sentence_transformers",
+      "llm"
+    ],
+    [
+      "uuid",
+      "memory"
+    ]
+  ],
+  "invariants": [
+    "Every memory belongs to exactly one user.",
+    "No cross-user memory retrieval is allowed.",
+    "Every outbound LLM request must have a timeout.",
+    "All stored memories must include embeddings and metadata.",
+    "Relevant memories must be retrieved before generating an AI response."
+  ],
+  "freeze_boundary": [
+    "implementation/**",
+    "design/**",
+    "verification/**"
+  ]
+}
