@@ -1,0 +1,35 @@
+Conversational Memory Intelligence System
+Objective
+
+Build an intelligent conversational memory system capable of remembering user information across multiple conversations while ensuring:
+
+relevant memory retrieval
+user isolation
+privacy
+token-efficient prompts
+memory updates
+deletion
+observability
+
+The system extends a traditional Retrieval-Augmented Generation (RAG) architecture with persistent conversational memory.
+
+Problem
+
+LLMs forget everything after every request.
+
+A simple vector database also fails because
+
+stores everything
+retrieves irrelevant memories
+cannot forget
+cannot resolve contradictions
+leaks data between users
+
+Our improved architecture solves these issues.
+
+Success Metrics
+Retrieval Accuracy > 90%
+P95 latency < 1 sec
+Zero cross-user leakage
+Token budget respected
+Sensitive information filtered

@@ -1,0 +1,61 @@
+                User
+
+                 │
+
+          FastAPI /chat
+
+                 │
+
+      Authentication Layer
+
+                 │
+
+       Memory Extraction
+
+                 │
+
+      PII Detection Filter
+
+                 │
+
+      Memory Admission Policy
+
+        ├──────────────┐
+        │              │
+ Reject Memory     Store Memory
+
+                        │
+
+                 Embedding Model
+
+                        │
+
+                  ChromaDB
+
+                        │
+
+          Memory Retrieval Engine
+
+                        │
+
+           Multi-Signal Ranking
+
+                        │
+
+          Context Budget Manager
+
+                        │
+
+             Prompt Builder
+
+                        │
+
+              Local LLM
+
+                        │
+
+             AI Response
+
+                        │
+
+      Reflection Background Job

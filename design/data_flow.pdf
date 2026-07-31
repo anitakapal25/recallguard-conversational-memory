@@ -1,0 +1,53 @@
+User sends message
+
+↓
+
+Extract candidate memory
+
+↓
+
+Classify memory
+
+↓
+
+PII Filter
+
+↓
+
+Embedding
+
+↓
+
+Store in ChromaDB
+
+↓
+
+User asks another question
+
+↓
+
+Generate embedding
+
+↓
+
+Search ChromaDB
+
+↓
+
+Rank memories
+
+↓
+
+Select top memories
+
+↓
+
+Build Prompt
+
+↓
+
+LLM
+
+↓
+
+Response
