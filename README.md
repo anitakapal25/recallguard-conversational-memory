@@ -1,29 +1,111 @@
-# RecallGuard
+# RecallGuard - Conversational Memory Intelligence System
 
-RecallGuard is a Conversational Memory System that investigates
-how an AI assistant can retain, retrieve, update, and forget useful
-information across conversations.
+## Overview
 
-This repository follows a problem-first engineering process. The project begins
-by reconstructing the limitations of stateless assistants and naive retrieval
-before designing or implementing the final memory architecture.
+RecallGuard is a conversational memory system that stores, retrieves, ranks, and manages long-term memories for AI assistants using ChromaDB and Sentence Transformers.
 
-RecallGuard is a privacy-aware conversational memory intelligence system.
+## Features
 
-The project investigates how an AI assistant can decide what information
-to retain, retrieve relevant memories, handle changing information,
-respect token limits, protect sensitive data, and prevent cross-user
-memory leakage.
+- Persistent memory storage using ChromaDB
+- Semantic search with embeddings
+- Memory ranking
+- Context building
+- Reflection engine
+- Duplicate detection
+- Soft deletion
+- Confidence filtering
+- User isolation
+- Structured logging
+- Basic authentication
+- REST API
+- Unit testing with pytest
 
-## Current stage
+---
 
-Deliverable 1: Problem Reconstruction
+## Project Structure
 
-| Priority | Resource                             | Purpose                          |
-| -------- | ------------------------------------ | -------------------------------- |
-| ⭐⭐⭐⭐⭐    | Attention Is All You Need            | Understand context limits        |
-| ⭐⭐⭐⭐⭐    | Retrieval-Augmented Generation (RAG) | Understand retrieval             |
-| ⭐⭐⭐⭐⭐    | MemGPT                               | Understand conversational memory |
-| ⭐⭐⭐⭐     | Generative Agents                    | Understand memory lifecycle      |
-| ⭐⭐⭐      | Memory Networks                      | Historical evolution             |
-| ⭐⭐       | End-to-End Memory Networks           | Memory architecture concepts     |
+```
+implementation/
+│
+├── app.py
+├── auth.py
+├── config.py
+├── context_builder.py
+├── database.py
+├── logger.py
+├── memory_store.py
+├── models.py
+├── ranking.py
+├── reflection.py
+├── retrieval.py
+├── test_memory_store.py
+└── test_retrieval.py
+```
+
+---
+
+## Installation
+
+```bash
+git clone <repository>
+cd recallguard-conversational-memory
+
+pip install -r requirements.txt
+```
+
+---
+
+## Run
+
+```bash
+python app.py
+```
+
+Server runs at:
+
+```
+http://127.0.0.1:5000
+```
+
+---
+
+## Run Tests
+
+```bash
+pytest -v
+```
+
+---
+
+## Technologies Used
+
+- Python
+- ChromaDB
+- Sentence Transformers
+- Flask
+- PyTest
+
+---
+
+## Deliverable 6 Components
+
+- Persistent Memory Store
+- Retrieval Engine
+- Ranking Module
+- Context Builder
+- Reflection Module
+- Logger
+- Authentication
+- REST API
+- Unit Tests
+
+---
+
+## Future Enhancements
+
+- Redis caching
+- JWT authentication
+- Role-based access control
+- Memory summarization
+- Multi-agent memory sharing
+- Dashboard and analytics
