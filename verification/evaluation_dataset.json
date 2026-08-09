@@ -1,0 +1,121 @@
+{
+  "dataset_name": "RecallGuard Memory Evaluation Dataset",
+  "version": "1.0",
+  "description": "Evaluation cases for memory extraction, admission, duplicate detection, retrieval, context construction, and lifecycle behavior.",
+  "cases": [
+    {
+      "id": "EVAL-001",
+      "input": "I like coffee.",
+      "expected_memory_type": "preference",
+      "expected_store": true,
+      "expected_content": "I like coffee."
+    },
+    {
+      "id": "EVAL-002",
+      "input": "I want to become an AI Engineer.",
+      "expected_memory_type": "goal",
+      "expected_store": true,
+      "expected_content": "I want to become an AI Engineer."
+    },
+    {
+      "id": "EVAL-003",
+      "input": "I am learning Python.",
+      "expected_memory_type": "fact",
+      "expected_store": true,
+      "expected_content": "I am learning Python."
+    },
+    {
+      "id": "EVAL-004",
+      "input": "I live in Bangalore.",
+      "expected_memory_type": "fact",
+      "expected_store": true,
+      "expected_content": "I live in Bangalore."
+    },
+    {
+      "id": "EVAL-005",
+      "input": "I don't like tea.",
+      "expected_memory_type": "preference",
+      "expected_store": true,
+      "expected_content": "I don't like tea."
+    },
+    {
+      "id": "EVAL-006",
+      "input": "Hello, how are you?",
+      "expected_memory_type": null,
+      "expected_store": false,
+      "expected_content": null
+    },
+    {
+      "id": "EVAL-007",
+      "input": "I really enjoy drinking coffee.",
+      "expected_memory_type": "preference",
+      "expected_store": true,
+      "expected_content": "I really enjoy drinking coffee."
+    },
+    {
+      "id": "EVAL-008",
+      "input": "I love coffee.",
+      "expected_memory_type": "preference",
+      "expected_store": false,
+      "expected_behavior": "Detected as semantically similar to an existing coffee preference and should be rejected as a duplicate when the similarity threshold is met."
+    },
+    {
+      "id": "EVAL-009",
+      "input": "What does the user like to drink?",
+      "expected_retrieval": [
+        "I like coffee",
+        "I like tea"
+      ],
+      "expected_behavior": "Return relevant drink preferences rather than unrelated memories."
+    },
+    {
+      "id": "EVAL-010",
+      "input": "What is the user's career goal?",
+      "expected_retrieval": [
+        "I want to become an AI Engineer."
+      ],
+      "expected_behavior": "Retrieve the user's goal memory."
+    },
+    {
+      "id": "EVAL-011",
+      "input": "What programming language is the user learning?",
+      "expected_retrieval": [
+        "I am learning Python",
+        "I am learning Python for AI engineering."
+      ],
+      "expected_behavior": "Retrieve relevant Python-learning memories."
+    },
+    {
+      "id": "EVAL-012",
+      "input": "What's the weather today?",
+      "expected_retrieval": [],
+      "expected_behavior": "Do not use unrelated user memories to answer a weather query."
+    },
+    {
+      "id": "EVAL-013",
+      "input": "Actually, I prefer tea now.",
+      "expected_memory_type": "preference",
+      "expected_store": true,
+      "expected_behavior": "Store the updated preference and allow newer information to take precedence during context construction."
+    },
+    {
+      "id": "EVAL-014",
+      "input": "12345",
+      "expected_memory_type": "conversation",
+      "expected_store": false,
+      "expected_behavior": "Reject numeric-only low-value input."
+    },
+    {
+      "id": "EVAL-015",
+      "input": "Hello.",
+      "expected_memory_type": "conversation",
+      "expected_store": true,
+      "expected_behavior": "AdmissionEngine currently accepts this input because it is at least five characters long; this case documents the current behavior."
+    },
+    {
+      "id": "EVAL-016",
+      "input": "Run reflection for user_1.",
+      "expected_behavior": "Reflection should summarize active memories and report expired, duplicate, and low-confidence maintenance counts."
+    }
+  ]
+}

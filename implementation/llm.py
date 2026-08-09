@@ -1,24 +1,33 @@
-from sentence_transformers import SentenceTransformer
+"""
+llm.py
+
+Local LLM interface using Ollama.
+"""
+
 import ollama
 
-# Load embedding model once
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
+class LocalLLM:
 
-def create_embedding(text):
-    return embedding_model.encode(text).tolist()
+    def __init__(
+        self,
+        model: str = "llama3.2:3b",
+    ):
+        self.model = model
 
+    def generate(
+        self,
+        prompt: str,
+    ) -> str:
 
-def generate_response(prompt):
+        response = ollama.chat(
+            model=self.model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+        )
 
-    response = ollama.chat(
-        model="llama3.2:3b",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    return response["message"]["content"]
+        return response["message"]["content"]

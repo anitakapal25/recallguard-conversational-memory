@@ -1,0 +1,7 @@
+test_id,query,expected_memory,memory_type,similarity,result
+RET-001,What does the user like to drink?,I like coffee,preference,0.674,PASS
+RET-002,What programming language is the user learning?,I am learning Python,fact,,PASS
+RET-003,What is the user's career goal?,I want to become an AI Engineer.,goal,,PASS
+RET-004,What does the user like to drink?,I like tea,preference,,PASS
+RET-005,What does the user dislike?,I don't like tea.,preference,,PASS
+RET-006,What is the user's favorite programming language?,No directly matching memory,none,,PASS

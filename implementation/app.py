@@ -18,6 +18,7 @@ from reflection import ReflectionEngine
 from retrieval import MemoryRetriever
 from extractor import MemoryExtractor
 from admission import AdmissionEngine
+from llm import LocalLLM
 
 app = Flask(__name__)
 
@@ -44,6 +45,7 @@ extractor = MemoryExtractor()
 admission = AdmissionEngine()
 
 logger = MemoryLogger()
+llm = LocalLLM()
 
 
 # ==================================================
@@ -78,36 +80,29 @@ def chat():
     data = request.get_json()
 
     if not data:
-        return jsonify(
-            {
-                "error": "Invalid JSON"
-            }
-        ), 400
+        return jsonify({
+            "error": "Invalid JSON"
+        }), 400
 
     message = data.get("message")
 
     if not message:
-        return jsonify(
-            {
-                "error": "Message is required"
-            }
-        ), 400
+        return jsonify({
+            "error": "Message is required"
+        }), 400
 
     user_id = request.user["user_id"]
 
     # ==================================================
-    # STEP 1: Extract potential memories
+    # STEP 1: Extract memories
     # ==================================================
 
-    extracted_memories = extractor.extract(
-        message
-    )
+    extracted_memories = extractor.extract(message)
 
-    evaluated_memories = []
     stored_memories = []
 
     # ==================================================
-    # STEP 2: Evaluate extracted memories
+    # STEP 2: Admission + Store
     # ==================================================
 
     for memory in extracted_memories:
@@ -116,46 +111,24 @@ def chat():
             memory
         )
 
-        evaluated_memories.append(
-            evaluated.copy()
-        )
-
-        # ----------------------------------------------
-        # Admission decision
-        # ----------------------------------------------
-
-        if not evaluated["store"]:
+        if not evaluated.get("store"):
             continue
 
-        memory_text = evaluated["content"]
-
-        # ----------------------------------------------
-        # Generate embedding
-        # ----------------------------------------------
+        content = evaluated["content"]
 
         embedding = embedding_model.encode(
-            memory_text
+            content
         ).tolist()
 
-        # ----------------------------------------------
-        # Duplicate detection
-        # ----------------------------------------------
-
-        duplicate = memory_store.is_duplicate(
+        if memory_store.is_duplicate(
             user_id,
             embedding,
-        )
-
-        if duplicate:
+        ):
             continue
-
-        # ----------------------------------------------
-        # Store memory
-        # ----------------------------------------------
 
         memory_id = memory_store.add_memory(
             user_id=user_id,
-            text=memory_text,
+            text=content,
             embedding=embedding,
             memory_type=evaluated["memory_type"],
             importance=evaluated["importance"],
@@ -165,10 +138,8 @@ def chat():
         stored_memories.append(
             {
                 "id": memory_id,
-                "content": memory_text,
+                "content": content,
                 "memory_type": evaluated["memory_type"],
-                "importance": evaluated["importance"],
-                "confidence": evaluated["confidence"],
             }
         )
 
@@ -206,53 +177,43 @@ def chat():
     )
 
     # ==================================================
-    # STEP 6: Response message
+    # STEP 6: Generate LLM response
     # ==================================================
 
-    if stored_memories:
+    try:
 
-        response_message = (
-            "I learned something useful from your message."
+        response = llm.generate(
+            prompt
         )
 
-    elif extracted_memories:
+    except Exception as e:
 
-        response_message = (
-            "I already remember this information."
+        print(
+            "LLM ERROR:",
+            str(e)
         )
 
-    else:
-
-        response_message = (
-            "I didn't find any long-term information "
-            "to remember from this message."
-        )
-
-    # ==================================================
-    # STEP 7: Return result
-    # ==================================================
-
-    return jsonify(
-        {
-            "response": response_message,
-
-            "memory_stored": (
-                len(stored_memories) > 0
-            ),
-
-            "stored_memories": stored_memories,
-
-            "extracted_memories": (
-                evaluated_memories
-            ),
-
-            "memories_used": len(ranked),
-
+        return jsonify({
+            "error": "Local LLM failed",
+            "details": str(e),
             "memories": ranked,
+            "stored_memories": stored_memories,
+        }), 500
 
-            "prompt": prompt,
-        }
-    )
+    # ==================================================
+    # STEP 7: Return response
+    # ==================================================
+
+    return jsonify({
+        "response": response,
+        "memory_stored": len(
+            stored_memories
+        ) > 0,
+        "stored_memories": stored_memories,
+        "memories_used": len(ranked),
+        "memories": ranked,
+        "prompt": prompt,
+    })
 # ==================================================
 # Store Memory
 # ==================================================
