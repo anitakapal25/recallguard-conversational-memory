@@ -15,7 +15,9 @@ from memory_store import MemoryStore
 class MemoryRetriever:
 
     def __init__(self, store: MemoryStore):
+
         self.store = store
+
         self.model = SentenceTransformer(
             EMBEDDING_MODEL
         )
@@ -33,33 +35,57 @@ class MemoryRetriever:
         min_confidence: float = 0.0,
     ) -> List[Dict]:
 
-        # Empty query used for filtering
-        if query.strip():
+        if not query or not query.strip():
+            return []
 
-            embedding = self.model.encode(
-                query
-            ).tolist()
+        # ----------------------------------------------
+        # Generate query embedding
+        # ----------------------------------------------
 
-        else:
+        embedding = self.model.encode(
+            query
+        ).tolist()
 
-            embedding = self.model.encode(
-                "memory"
-            ).tolist()
+        # ----------------------------------------------
+        # Retrieve from ChromaDB
+        # ----------------------------------------------
 
-        # Retrieve more than required so filtering
-        # doesn't accidentally remove all results
         results = self.store.retrieve_memory(
             user_id=user_id,
             embedding=embedding,
             top_k=max(top_k * 5, 50),
         )
 
+        # Debug information
+        print("\nRETRIEVAL QUERY:", query)
+        print("RETRIEVAL USER:", user_id)
+        print("RETRIEVAL RAW RESULT:", results)
+
         memories = []
 
-        ids = results.get("ids", [[]])[0]
-        docs = results.get("documents", [[]])[0]
-        metas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0]
+        ids = results.get(
+            "ids",
+            [[]]
+        )[0]
+
+        docs = results.get(
+            "documents",
+            [[]]
+        )[0]
+
+        metas = results.get(
+            "metadatas",
+            [[]]
+        )[0]
+
+        distances = results.get(
+            "distances",
+            [[]]
+        )[0]
+
+        # ----------------------------------------------
+        # Process results
+        # ----------------------------------------------
 
         for memory_id, doc, meta, distance in zip(
             ids,
@@ -68,28 +94,71 @@ class MemoryRetriever:
             distances,
         ):
 
-            if meta.get("deleted", False):
+            if not meta:
                 continue
 
+            # Ignore deleted memories
+            if meta.get(
+                "deleted",
+                False,
+            ):
+                continue
+
+            # Confidence filter
             if (
-                meta.get("confidence", 0)
+                meta.get(
+                    "confidence",
+                    0,
+                )
                 < min_confidence
             ):
                 continue
 
+            # Memory type filter
             if (
                 memory_type is not None
-                and meta.get("memory_type")
+                and meta.get(
+                    "memory_type"
+                )
                 != memory_type
             ):
                 continue
 
-            similarity = max(
-                0.0,
-                1.0 - distance,
+            # ------------------------------------------
+            # Convert Chroma L2 distance
+            # to cosine similarity
+            #
+            # For normalized embeddings:
+            #
+            # cosine similarity =
+            # 1 - (L2 distance / 2)
+            # ------------------------------------------
+
+            similarity = 1.0 - (
+                distance / 2.0
             )
 
+            similarity = max(
+                0.0,
+                min(
+                    1.0,
+                    similarity,
+                ),
+            )
+
+            print(
+                "MEMORY:",
+                doc,
+                "| distance:",
+                distance,
+                "| similarity:",
+                similarity,
+            )
+
+            # ------------------------------------------
             # Ignore weak matches
+            # ------------------------------------------
+
             if similarity < 0.40:
                 continue
 
@@ -101,6 +170,10 @@ class MemoryRetriever:
                     "metadata": meta,
                 }
             )
+
+        # ----------------------------------------------
+        # Sort by relevance
+        # ----------------------------------------------
 
         memories.sort(
             key=lambda x: x["similarity"],
@@ -181,15 +254,29 @@ class MemoryRetriever:
 
         memories = []
 
-        ids = results.get("ids", [])
-        docs = results.get("documents", [])
-        metas = results.get("metadatas", [])
+        ids = results.get(
+            "ids",
+            []
+        )
+
+        docs = results.get(
+            "documents",
+            []
+        )
+
+        metas = results.get(
+            "metadatas",
+            []
+        )
 
         for memory_id, doc, meta in zip(
             ids,
             docs,
             metas,
         ):
+
+            if not meta:
+                continue
 
             if meta.get(
                 "deleted",

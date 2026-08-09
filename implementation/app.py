@@ -6,7 +6,7 @@ Conversational Memory Intelligence System.
 """
 
 from sentence_transformers import SentenceTransformer
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 
 from auth import login_required
 from config import EMBEDDING_MODEL
@@ -16,6 +16,8 @@ from memory_store import MemoryStore
 from ranking import MemoryRanker
 from reflection import ReflectionEngine
 from retrieval import MemoryRetriever
+from extractor import MemoryExtractor
+from admission import AdmissionEngine
 
 app = Flask(__name__)
 
@@ -38,6 +40,8 @@ ranker = MemoryRanker()
 builder = ContextBuilder()
 
 reflection = ReflectionEngine()
+extractor = MemoryExtractor()
+admission = AdmissionEngine()
 
 logger = MemoryLogger()
 
@@ -56,7 +60,199 @@ def health():
         }
     )
 
+# ==================================================
+# Chat UI
+# ==================================================
 
+@app.route("/", methods=["GET"])
+def home():
+    return render_template("chat.html")
+
+# ==================================================
+# Chat
+# ==================================================
+@app.route("/chat", methods=["POST"])
+@login_required
+def chat():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify(
+            {
+                "error": "Invalid JSON"
+            }
+        ), 400
+
+    message = data.get("message")
+
+    if not message:
+        return jsonify(
+            {
+                "error": "Message is required"
+            }
+        ), 400
+
+    user_id = request.user["user_id"]
+
+    # ==================================================
+    # STEP 1: Extract potential memories
+    # ==================================================
+
+    extracted_memories = extractor.extract(
+        message
+    )
+
+    evaluated_memories = []
+    stored_memories = []
+
+    # ==================================================
+    # STEP 2: Evaluate extracted memories
+    # ==================================================
+
+    for memory in extracted_memories:
+
+        evaluated = admission.evaluate(
+            memory
+        )
+
+        evaluated_memories.append(
+            evaluated.copy()
+        )
+
+        # ----------------------------------------------
+        # Admission decision
+        # ----------------------------------------------
+
+        if not evaluated["store"]:
+            continue
+
+        memory_text = evaluated["content"]
+
+        # ----------------------------------------------
+        # Generate embedding
+        # ----------------------------------------------
+
+        embedding = embedding_model.encode(
+            memory_text
+        ).tolist()
+
+        # ----------------------------------------------
+        # Duplicate detection
+        # ----------------------------------------------
+
+        duplicate = memory_store.is_duplicate(
+            user_id,
+            embedding,
+        )
+
+        if duplicate:
+            continue
+
+        # ----------------------------------------------
+        # Store memory
+        # ----------------------------------------------
+
+        memory_id = memory_store.add_memory(
+            user_id=user_id,
+            text=memory_text,
+            embedding=embedding,
+            memory_type=evaluated["memory_type"],
+            importance=evaluated["importance"],
+            confidence=evaluated["confidence"],
+        )
+
+        stored_memories.append(
+            {
+                "id": memory_id,
+                "content": memory_text,
+                "memory_type": evaluated["memory_type"],
+                "importance": evaluated["importance"],
+                "confidence": evaluated["confidence"],
+            }
+        )
+
+        logger.log_memory_added(
+            user_id,
+            memory_id,
+            evaluated["memory_type"],
+        )
+
+    # ==================================================
+    # STEP 3: Retrieve relevant memories
+    # ==================================================
+
+    memories = retriever.retrieve(
+        query=message,
+        user_id=user_id,
+        top_k=5,
+    )
+
+    # ==================================================
+    # STEP 4: Rank memories
+    # ==================================================
+
+    ranked = ranker.rank(
+        memories
+    )
+
+    # ==================================================
+    # STEP 5: Build context
+    # ==================================================
+
+    prompt = builder.build_prompt(
+        message,
+        ranked,
+    )
+
+    # ==================================================
+    # STEP 6: Response message
+    # ==================================================
+
+    if stored_memories:
+
+        response_message = (
+            "I learned something useful from your message."
+        )
+
+    elif extracted_memories:
+
+        response_message = (
+            "I already remember this information."
+        )
+
+    else:
+
+        response_message = (
+            "I didn't find any long-term information "
+            "to remember from this message."
+        )
+
+    # ==================================================
+    # STEP 7: Return result
+    # ==================================================
+
+    return jsonify(
+        {
+            "response": response_message,
+
+            "memory_stored": (
+                len(stored_memories) > 0
+            ),
+
+            "stored_memories": stored_memories,
+
+            "extracted_memories": (
+                evaluated_memories
+            ),
+
+            "memories_used": len(ranked),
+
+            "memories": ranked,
+
+            "prompt": prompt,
+        }
+    )
 # ==================================================
 # Store Memory
 # ==================================================

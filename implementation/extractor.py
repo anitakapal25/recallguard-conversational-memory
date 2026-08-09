@@ -1,88 +1,248 @@
 """
 extractor.py
 
-Extract candidate memories from user conversation.
+Extracts potentially useful long-term memories
+from conversational text.
+
+This is a lightweight rule-based extractor designed
+for the RecallGuard project.
+
+It identifies:
+- Preferences
+- Goals
+- Facts
+- Important personal information
+- Explicit dislikes
+
+It does NOT use a paid LLM/API.
 """
 
 import re
-from typing import List
-
-from models import Memory
+from typing import List, Dict
 
 
 class MemoryExtractor:
-    """
-    Rule-based memory extractor.
 
-    Later this can be replaced with an LLM.
-    """
+    def __init__(self):
+        pass
 
-    PREFERENCE_PATTERNS = [
-        r"\bI like\b",
-        r"\bI love\b",
-        r"\bI prefer\b",
-        r"\bMy favorite\b",
-    ]
+    # ==================================================
+    # Main Extraction Method
+    # ==================================================
 
-    FACT_PATTERNS = [
-        r"\bI am\b",
-        r"\bI work\b",
-        r"\bI live\b",
-        r"\bMy name\b",
-    ]
+    def extract(
+        self,
+        text: str,
+    ) -> List[Dict]:
 
-    TASK_PATTERNS = [
-        r"\bRemember\b",
-        r"\bDon't forget\b",
-        r"\bRemind me\b",
-    ]
+        if not text:
+            return []
 
-    def classify(self, text: str) -> str:
         text = text.strip()
 
-        for pattern in self.PREFERENCE_PATTERNS:
-            if re.search(pattern, text, re.IGNORECASE):
-                return "preference"
-
-        for pattern in self.FACT_PATTERNS:
-            if re.search(pattern, text, re.IGNORECASE):
-                return "fact"
-
-        for pattern in self.TASK_PATTERNS:
-            if re.search(pattern, text, re.IGNORECASE):
-                return "task"
-
-        return "conversation"
-
-    def split_sentences(self, text: str) -> List[str]:
-        return [
-            sentence.strip()
-            for sentence in re.split(r"[.!?]", text)
-            if sentence.strip()
-        ]
-
-    def extract(self, conversation: str) -> List[dict]:
-        """
-        Returns list of candidate memories.
-
-        Example:
-        [
-            {
-                "content":"I like coffee",
-                "memory_type":"preference"
-            }
-        ]
-        """
+        if not text:
+            return []
 
         memories = []
 
-        for sentence in self.split_sentences(conversation):
+        # --------------------------------------------------
+        # Preference
+        # --------------------------------------------------
 
-            memories.append(
-                {
-                    "content": sentence,
-                    "memory_type": self.classify(sentence),
-                }
+        preference_patterns = [
+            r"\bi (?:really\s+)?(?:like|love|prefer|enjoy)\s+(.+)",
+            r"\bi(?:'m| am) a fan of\s+(.+)",
+            r"\bmy favorite\s+(.+?)\s+is\s+(.+)",
+        ]
+
+        for pattern in preference_patterns:
+
+            match = re.search(
+                pattern,
+                text,
+                re.IGNORECASE,
             )
 
-        return memories
+            if match:
+
+                memories.append(
+                    {
+                        "memory_type": "preference",
+                        "content": text,
+                        "importance": 0.6,
+                        "confidence": 0.9,
+                    }
+                )
+
+                break
+
+        # --------------------------------------------------
+        # Goal
+        # --------------------------------------------------
+
+        goal_patterns = [
+            r"\bi want to\s+(.+)",
+            r"\bi would like to\s+(.+)",
+            r"\bmy goal is to\s+(.+)",
+            r"\bi(?:'m| am) planning to\s+(.+)",
+            r"\bi hope to\s+(.+)",
+        ]
+
+        for pattern in goal_patterns:
+
+            match = re.search(
+                pattern,
+                text,
+                re.IGNORECASE,
+            )
+
+            if match:
+
+                memories.append(
+                    {
+                        "memory_type": "goal",
+                        "content": text,
+                        "importance": 0.8,
+                        "confidence": 0.9,
+                    }
+                )
+
+                break
+
+        # --------------------------------------------------
+        # Explicit dislike
+        # --------------------------------------------------
+
+        dislike_patterns = [
+            r"\bi (?:don't|do not) like\s+(.+)",
+            r"\bi hate\s+(.+)",
+            r"\bi dislike\s+(.+)",
+            r"\bi avoid\s+(.+)",
+        ]
+
+        for pattern in dislike_patterns:
+
+            match = re.search(
+                pattern,
+                text,
+                re.IGNORECASE,
+            )
+
+            if match:
+
+                memories.append(
+                    {
+                        "memory_type": "preference",
+                        "content": text,
+                        "importance": 0.7,
+                        "confidence": 0.9,
+                    }
+                )
+
+                break
+
+        # --------------------------------------------------
+        # Personal facts
+        # --------------------------------------------------
+
+        fact_patterns = [
+            r"\bi work at\s+(.+)",
+            r"\bi work as\s+(.+)",
+            r"\bi live in\s+(.+)",
+            r"\bi am from\s+(.+)",
+            r"\bi have\s+(.+)",
+            r"\bi use\s+(.+)",
+            r"\bi(?:'m| am) learning\s+(.+)",
+        ]
+
+        for pattern in fact_patterns:
+
+            match = re.search(
+                pattern,
+                text,
+                re.IGNORECASE,
+            )
+
+            if match:
+
+                memories.append(
+                    {
+                        "memory_type": "fact",
+                        "content": text,
+                        "importance": 0.6,
+                        "confidence": 0.85,
+                    }
+                )
+
+                break
+
+        # --------------------------------------------------
+        # Remove duplicate extracted memories
+        # --------------------------------------------------
+
+        unique_memories = []
+
+        seen = set()
+
+        for memory in memories:
+
+            key = (
+                memory["memory_type"],
+                memory["content"].lower().strip(),
+            )
+
+            if key not in seen:
+
+                seen.add(key)
+
+                unique_memories.append(
+                    memory
+                )
+
+        return unique_memories
+
+
+# ==================================================
+# Convenience Function
+# ==================================================
+
+def extract_memories(
+    text: str,
+) -> List[Dict]:
+
+    extractor = MemoryExtractor()
+
+    return extractor.extract(text)
+
+
+# ==================================================
+# Manual Test
+# ==================================================
+
+if __name__ == "__main__":
+
+    extractor = MemoryExtractor()
+
+    examples = [
+        "I like coffee.",
+        "I want to become an AI Engineer.",
+        "I am learning Python.",
+        "I live in Bangalore.",
+        "I don't like tea.",
+        "Hello, how are you?",
+        "I really enjoy drinking coffee.",
+    ]
+
+    for example in examples:
+
+        print("\nInput:")
+        print(example)
+
+        print("Extracted:")
+
+        results = extractor.extract(
+            example
+        )
+
+        for result in results:
+            print(result)

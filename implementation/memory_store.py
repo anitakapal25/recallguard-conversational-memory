@@ -166,29 +166,53 @@ class MemoryStore:
 
     def is_duplicate(
         self,
-        user_id: str,
+        tenant_id,
         embedding,
-        threshold: float = 0.95,
+        threshold=0.85,
     ):
+        """
+        Check whether a very similar memory already exists.
+
+        Uses ChromaDB distance and converts squared L2
+        distance to cosine similarity for normalized embeddings.
+
+        Returns:
+            True  -> duplicate found
+            False -> no duplicate found
+        """
 
         result = self.collection.query(
             query_embeddings=[embedding],
             n_results=1,
             where={
                 "$and": [
-                    {"user_id": user_id},
+                    {"user_id": tenant_id},
                     {"deleted": False},
                 ]
             },
+            include=["distances"],
         )
+        print("DUPLICATE QUERY RESULT:", result)
 
-        if not result["distances"]:
+        # No existing memories
+        if (
+            not result
+            or not result.get("distances")
+            or not result["distances"][0]
+        ):
             return False
 
-        similarity = 1 - result["distances"][0][0]
+        distance = result["distances"][0][0]
+
+        # Chroma's default L2 distance for normalized vectors:
+        # cosine_similarity = 1 - (distance / 2)
+        print("DUPLICATE CHECK DISTANCE:", distance)
+
+        similarity = 1 - (distance / 2)
+
+        print("DUPLICATE CHECK SIMILARITY:", similarity)
 
         return similarity >= threshold
-
     # --------------------------------------------------
     # Expire Memories
     # --------------------------------------------------
