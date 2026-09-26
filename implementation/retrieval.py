@@ -1,296 +1,47 @@
-"""
-retrieval.py
+"""Semantic candidates with explicit filters; ranking is separate."""
+from embeddings import SentenceEncoder
+import re
 
-Memory retrieval layer using ChromaDB.
-"""
-
-from typing import Dict, List, Optional
-
-from sentence_transformers import SentenceTransformer
-
-from config import EMBEDDING_MODEL
-from memory_store import MemoryStore
+# Exact lexical coverage rescues rare terms and long/noisy memories. Generic
+# function words cannot admit a result on their own. This is not query expansion.
+STOP_WORDS = {"i", "my", "me", "a", "an", "the", "is", "are", "am", "do", "does",
+              "what", "which", "where", "how", "who", "user", "of", "to", "in", "for"}
 
 
 class MemoryRetriever:
-
-    def __init__(self, store: MemoryStore):
-
+    def __init__(self, store, encoder=None):
         self.store = store
+        self.model = encoder or SentenceEncoder()
 
-        self.model = SentenceTransformer(
-            EMBEDDING_MODEL
-        )
-
-    # --------------------------------------------------
-    # General Retrieval
-    # --------------------------------------------------
-
-    def retrieve(
-        self,
-        query: str,
-        user_id: str,
-        top_k: int = 5,
-        memory_type: Optional[str] = None,
-        min_confidence: float = 0.0,
-    ) -> List[Dict]:
-
+    def retrieve(self, query, user_id, top_k=5, memory_type=None, min_confidence=0.0):
         if not query or not query.strip():
             return []
-
-        # ----------------------------------------------
-        # Generate query embedding
-        # ----------------------------------------------
-
-        embedding = self.model.encode(
-            query
-        ).tolist()
-
-        # ----------------------------------------------
-        # Retrieve from ChromaDB
-        # ----------------------------------------------
-
-        results = self.store.retrieve_memory(
-            user_id=user_id,
-            embedding=embedding,
-            top_k=max(top_k * 5, 50),
-        )
-
-        # Debug information
-        print("\nRETRIEVAL QUERY:", query)
-        print("RETRIEVAL USER:", user_id)
-        print("RETRIEVAL RAW RESULT:", results)
-
+        if not isinstance(top_k, int) or isinstance(top_k, bool) or not 1 <= top_k <= 100:
+            raise ValueError("top_k must be 1-100")
+        results = self.store.retrieve_memory(user_id, self.model.encode(query), min(100, max(50, top_k * 5)))
+        query_terms = set(re.findall(r"\w+", query.casefold())) - STOP_WORDS
         memories = []
-
-        ids = results.get(
-            "ids",
-            [[]]
-        )[0]
-
-        docs = results.get(
-            "documents",
-            [[]]
-        )[0]
-
-        metas = results.get(
-            "metadatas",
-            [[]]
-        )[0]
-
-        distances = results.get(
-            "distances",
-            [[]]
-        )[0]
-
-        # ----------------------------------------------
-        # Process results
-        # ----------------------------------------------
-
-        for memory_id, doc, meta, distance in zip(
-            ids,
-            docs,
-            metas,
-            distances,
-        ):
-
-            if not meta:
+        for mid, doc, meta, distance in zip(*(results[key][0] for key in ("ids", "documents", "metadatas", "distances"))):
+            similarity = max(0.0, min(1.0, 1 - distance / 2))
+            exact_coverage = bool(query_terms) and query_terms.issubset(set(re.findall(r"\w+", doc.casefold())))
+            if (similarity < 0.4 and not exact_coverage) or meta.get("confidence", 0) < min_confidence:
                 continue
-
-            # Ignore deleted memories
-            if meta.get(
-                "deleted",
-                False,
-            ):
+            if memory_type is not None and meta["memory_type"] != memory_type:
                 continue
+            memories.append({"id": mid, "content": doc, "metadata": meta, "similarity": similarity,
+                             "lexical_match": exact_coverage})
+        return sorted(memories, key=lambda m: m["similarity"], reverse=True)[:top_k]
 
-            # Confidence filter
-            if (
-                meta.get(
-                    "confidence",
-                    0,
-                )
-                < min_confidence
-            ):
-                continue
+    def _typed(self, user_id, memory_type, top_k):
+        data = self.store.get_memories_by_type(user_id, memory_type)
+        return [{"id": mid, "content": doc, "metadata": meta, "similarity": 1.0}
+                for mid, doc, meta in zip(data["ids"], data["documents"], data["metadatas"])][:top_k]
 
-            # Memory type filter
-            if (
-                memory_type is not None
-                and meta.get(
-                    "memory_type"
-                )
-                != memory_type
-            ):
-                continue
+    def retrieve_preferences(self, user_id, top_k=5):
+        return self._typed(user_id, "preference", top_k)
 
-            # ------------------------------------------
-            # Convert Chroma L2 distance
-            # to cosine similarity
-            #
-            # For normalized embeddings:
-            #
-            # cosine similarity =
-            # 1 - (L2 distance / 2)
-            # ------------------------------------------
+    def retrieve_facts(self, user_id, top_k=5):
+        return self._typed(user_id, "fact", top_k)
 
-            similarity = 1.0 - (
-                distance / 2.0
-            )
-
-            similarity = max(
-                0.0,
-                min(
-                    1.0,
-                    similarity,
-                ),
-            )
-
-            print(
-                "MEMORY:",
-                doc,
-                "| distance:",
-                distance,
-                "| similarity:",
-                similarity,
-            )
-
-            # ------------------------------------------
-            # Ignore weak matches
-            # ------------------------------------------
-
-            if similarity < 0.40:
-                continue
-
-            memories.append(
-                {
-                    "id": memory_id,
-                    "content": doc,
-                    "similarity": similarity,
-                    "metadata": meta,
-                }
-            )
-
-        # ----------------------------------------------
-        # Sort by relevance
-        # ----------------------------------------------
-
-        memories.sort(
-            key=lambda x: x["similarity"],
-            reverse=True,
-        )
-
-        return memories[:top_k]
-
-    # --------------------------------------------------
-    # Retrieve Preferences
-    # --------------------------------------------------
-
-    def retrieve_preferences(
-        self,
-        user_id: str,
-        top_k: int = 5,
-    ) -> List[Dict]:
-
-        results = self.store.get_memories_by_type(
-            user_id,
-            "preference",
-        )
-
-        return self._convert_results(
-            results,
-            top_k,
-        )
-
-    # --------------------------------------------------
-    # Retrieve Facts
-    # --------------------------------------------------
-
-    def retrieve_facts(
-        self,
-        user_id: str,
-        top_k: int = 5,
-    ) -> List[Dict]:
-
-        results = self.store.get_memories_by_type(
-            user_id,
-            "fact",
-        )
-
-        return self._convert_results(
-            results,
-            top_k,
-        )
-
-    # --------------------------------------------------
-    # Retrieve Tasks
-    # --------------------------------------------------
-
-    def retrieve_tasks(
-        self,
-        user_id: str,
-        top_k: int = 5,
-    ) -> List[Dict]:
-
-        results = self.store.get_memories_by_type(
-            user_id,
-            "task",
-        )
-
-        return self._convert_results(
-            results,
-            top_k,
-        )
-
-    # --------------------------------------------------
-    # Helper
-    # --------------------------------------------------
-
-    def _convert_results(
-        self,
-        results,
-        top_k,
-    ) -> List[Dict]:
-
-        memories = []
-
-        ids = results.get(
-            "ids",
-            []
-        )
-
-        docs = results.get(
-            "documents",
-            []
-        )
-
-        metas = results.get(
-            "metadatas",
-            []
-        )
-
-        for memory_id, doc, meta in zip(
-            ids,
-            docs,
-            metas,
-        ):
-
-            if not meta:
-                continue
-
-            if meta.get(
-                "deleted",
-                False,
-            ):
-                continue
-
-            memories.append(
-                {
-                    "id": memory_id,
-                    "content": doc,
-                    "similarity": 1.0,
-                    "metadata": meta,
-                }
-            )
-
-        return memories[:top_k]
+    def retrieve_tasks(self, user_id, top_k=5):
+        return self._typed(user_id, "task", top_k)

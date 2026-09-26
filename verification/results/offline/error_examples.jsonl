@@ -1,0 +1,12 @@
+{"case": "recall", "mode": "baseline", "expected": ["coffee"], "actual": ["coffee", "sport"], "stale_or_sensitive": false, "budget_ok": true}
+{"case": "changed-location", "mode": "baseline", "expected": ["home"], "actual": ["home", "home-new"], "stale_or_sensitive": true, "budget_ok": true}
+{"case": "changed-preference", "mode": "baseline", "expected": ["drink"], "actual": ["drink", "drink-new"], "stale_or_sensitive": true, "budget_ok": true}
+{"case": "unrelated-query", "mode": "baseline", "expected": [], "actual": ["drink"], "stale_or_sensitive": false, "budget_ok": true}
+{"case": "email", "mode": "baseline", "expected": [], "actual": ["private"], "stale_or_sensitive": true, "budget_ok": true}
+{"case": "secret", "mode": "baseline", "expected": [], "actual": ["private"], "stale_or_sensitive": true, "budget_ok": true}
+{"case": "duplicate", "mode": "baseline", "expected": ["first"], "actual": ["first", "repeat"], "stale_or_sensitive": false, "budget_ok": true}
+{"case": "deletion", "mode": "baseline", "expected": [], "actual": ["removed"], "stale_or_sensitive": false, "budget_ok": true}
+{"case": "expiry", "mode": "baseline", "expected": [], "actual": ["old"], "stale_or_sensitive": false, "budget_ok": true}
+{"case": "bounded-context", "mode": "baseline", "expected": ["long1", "short", "long2"], "actual": ["long1", "short", "long2"], "stale_or_sensitive": false, "budget_ok": false}
+{"case": "negative-preference", "mode": "baseline", "expected": ["drink"], "actual": ["drink", "drink-new"], "stale_or_sensitive": true, "budget_ok": true}
+{"case": "type-provenance", "mode": "baseline", "expected": ["skill"], "actual": ["skill", "hobby"], "stale_or_sensitive": false, "budget_ok": true}

@@ -1,498 +1,148 @@
-"""
-app.py
+"""Flask app factory. Production invocation: waitress-serve --call app:create_app."""
+import time
+import uuid
+from flask import Flask, g, jsonify, render_template, request
+from werkzeug.exceptions import HTTPException
+from auth import AuthManager, login_required
+
+
+def create_app(service=None, api_keys=None):
+    app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
+    app.extensions["auth"] = AuthManager(api_keys)
+    if service is None:
+        from embeddings import SentenceEncoder
+        from llm import LocalLLM
+        from memory_store import MemoryStore
+        from service import MemoryService
+        service = MemoryService(MemoryStore(), SentenceEncoder(), LocalLLM())
+    app.extensions["memory_service"] = service
+
+    @app.before_request
+    def begin():
+        g.request_id = str(uuid.uuid4())
+        g.started = time.perf_counter()
+
+    @app.after_request
+    def finish(response):
+        response.headers["X-Request-ID"] = g.request_id
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+        app.logger.info("request id=%s method=%s status=%s duration_ms=%.2f",
+                        g.request_id, request.method, response.status_code, (time.perf_counter()-g.started)*1000)
+        return response
+
+    @app.errorhandler(ValueError)
+    def invalid(error):
+        return jsonify(error=str(error), request_id=g.request_id), 400
+
+    @app.errorhandler(HTTPException)
+    def http_error(error):
+        return jsonify(error=error.name, request_id=g.request_id), error.code
+
+    @app.errorhandler(Exception)
+    def unavailable(error):
+        # Never expose or log raw provider exceptions, prompts or database documents.
+        app.logger.error("operation_failed request_id=%s exception_type=%s", g.request_id, type(error).__name__)
+        return jsonify(error="Service unavailable", request_id=g.request_id), 503
+
+    def body():
+        data = request.get_json()
+        if not isinstance(data, dict):
+            raise ValueError("JSON object required")
+        return data
+
+    @app.get("/")
+    def home():
+        return render_template("chat.html")
+
+    @app.get("/health")
+    def health():
+        return jsonify(status="alive")
+
+    @app.get("/ready")
+    def ready():
+        service.store.collection.count()
+        return jsonify(storage="ready", generation="not_checked")
+
+    @app.get("/memories")
+    @login_required
+    def memories():
+        return jsonify(service.store.list_memories(g.user_id))
+
+    @app.post("/memory")
+    @login_required
+    def add():
+        data = body()
+        if data.get("consent") is not True:
+            raise ValueError("consent=true is required to store memory")
+        result = service.add(g.user_id, data.get("text"), memory_type=data.get("memory_type", "conversation"),
+                             importance=data.get("importance", 0.5), confidence=data.get("confidence", 0.9),
+                             retention_days=data.get("retention_days", 7))
+        return jsonify(result), 201 if result["status"] == "stored" else 200
+
+    @app.get("/memory/<mid>")
+    @login_required
+    def get(mid):
+        result = service.store.get_memory(mid, g.user_id)
+        return (jsonify(result), 200) if result["ids"] else (jsonify(error="Memory not found"), 404)
+
+    @app.put("/memory/<mid>")
+    @login_required
+    def update(mid):
+        data = body()
+        if data.get("consent") is not True:
+            raise ValueError("consent=true is required")
+        if not service.correct(g.user_id, mid, data.get("text")):
+            return jsonify(error="Memory not found"), 404
+        return jsonify(status="corrected", memory_id=mid)
+
+    @app.delete("/memory/<mid>")
+    @login_required
+    def delete(mid):
+        with service.lock:
+            deleted = service.store.delete_memory(mid, g.user_id)
+        return (jsonify(status="deleted"), 200) if deleted else (jsonify(error="Memory not found"), 404)
+
+    @app.post("/retrieve")
+    @login_required
+    def retrieve():
+        data = body()
+        return jsonify(service.retrieve(g.user_id, data.get("query"), data.get("top_k", 5)))
+
+    @app.post("/context")
+    @login_required
+    def context():
+        data = body()
+        query = service.safe_text(data.get("query"))
+        ranked = service.retrieve(g.user_id, query)
+        prompt = service.builder.build_prompt(query, ranked)
+        return jsonify(prompt=prompt, stats=service.builder.get_stats(prompt))
+
+    @app.post("/chat")
+    @login_required
+    def chat():
+        data = body()
+        remember = data.get("remember", False)
+        if not isinstance(remember, bool):
+            raise ValueError("remember must be boolean")
+        conversation_id = data.get("conversation_id", "")
+        if not isinstance(conversation_id, str) or len(conversation_id) > 128:
+            raise ValueError("conversation_id must be a string of at most 128 characters")
+        if service.pii.contains_pii(conversation_id):
+            raise ValueError("conversation_id must not contain sensitive content")
+        result = service.chat(g.user_id, data.get("message"), remember, conversation_id)
+        result["request_id"] = g.request_id
+        return jsonify(result), 503 if result["generation_status"] == "unavailable" else 200
+
+    @app.post("/reflection")
+    @login_required
+    def reflection():
+        return jsonify(service.reflect(g.user_id))
+
+    return app
 
-Main Flask application for the
-Conversational Memory Intelligence System.
-"""
-
-from sentence_transformers import SentenceTransformer
-from flask import Flask, jsonify, request, render_template
-
-from auth import login_required
-from config import EMBEDDING_MODEL
-from context_builder import ContextBuilder
-from logger import MemoryLogger
-from memory_store import MemoryStore
-from ranking import MemoryRanker
-from reflection import ReflectionEngine
-from retrieval import MemoryRetriever
-from extractor import MemoryExtractor
-from admission import AdmissionEngine
-from llm import LocalLLM
-
-app = Flask(__name__)
-
-# --------------------------------------------------
-# Components
-# --------------------------------------------------
-
-embedding_model = SentenceTransformer(
-    EMBEDDING_MODEL
-)
-
-memory_store = MemoryStore()
-
-retriever = MemoryRetriever(
-    memory_store
-)
-
-ranker = MemoryRanker()
-
-builder = ContextBuilder()
-
-reflection = ReflectionEngine()
-extractor = MemoryExtractor()
-admission = AdmissionEngine()
-
-logger = MemoryLogger()
-llm = LocalLLM()
-
-
-# ==================================================
-# Health Check
-# ==================================================
-
-@app.route("/health", methods=["GET"])
-def health():
-
-    return jsonify(
-        {
-            "status": "healthy",
-            "service": "Conversational Memory System",
-        }
-    )
-
-# ==================================================
-# Chat UI
-# ==================================================
-
-@app.route("/", methods=["GET"])
-def home():
-    return render_template("chat.html")
-
-# ==================================================
-# Chat
-# ==================================================
-@app.route("/chat", methods=["POST"])
-@login_required
-def chat():
-
-    data = request.get_json()
-
-    if not data:
-        return jsonify({
-            "error": "Invalid JSON"
-        }), 400
-
-    message = data.get("message")
-
-    if not message:
-        return jsonify({
-            "error": "Message is required"
-        }), 400
-
-    user_id = request.user["user_id"]
-
-    # ==================================================
-    # STEP 1: Extract memories
-    # ==================================================
-
-    extracted_memories = extractor.extract(message)
-
-    stored_memories = []
-
-    # ==================================================
-    # STEP 2: Admission + Store
-    # ==================================================
-
-    for memory in extracted_memories:
-
-        evaluated = admission.evaluate(
-            memory
-        )
-
-        if not evaluated.get("store"):
-            continue
-
-        content = evaluated["content"]
-
-        embedding = embedding_model.encode(
-            content
-        ).tolist()
-
-        if memory_store.is_duplicate(
-            user_id,
-            embedding,
-        ):
-            continue
-
-        memory_id = memory_store.add_memory(
-            user_id=user_id,
-            text=content,
-            embedding=embedding,
-            memory_type=evaluated["memory_type"],
-            importance=evaluated["importance"],
-            confidence=evaluated["confidence"],
-        )
-
-        stored_memories.append(
-            {
-                "id": memory_id,
-                "content": content,
-                "memory_type": evaluated["memory_type"],
-            }
-        )
-
-        logger.log_memory_added(
-            user_id,
-            memory_id,
-            evaluated["memory_type"],
-        )
-
-    # ==================================================
-    # STEP 3: Retrieve relevant memories
-    # ==================================================
-
-    memories = retriever.retrieve(
-        query=message,
-        user_id=user_id,
-        top_k=5,
-    )
-
-    # ==================================================
-    # STEP 4: Rank memories
-    # ==================================================
-
-    ranked = ranker.rank(
-        memories
-    )
-
-    # ==================================================
-    # STEP 5: Build context
-    # ==================================================
-
-    prompt = builder.build_prompt(
-        message,
-        ranked,
-    )
-
-    # ==================================================
-    # STEP 6: Generate LLM response
-    # ==================================================
-
-    try:
-
-        response = llm.generate(
-            prompt
-        )
-
-    except Exception as e:
-
-        print(
-            "LLM ERROR:",
-            str(e)
-        )
-
-        return jsonify({
-            "error": "Local LLM failed",
-            "details": str(e),
-            "memories": ranked,
-            "stored_memories": stored_memories,
-        }), 500
-
-    # ==================================================
-    # STEP 7: Return response
-    # ==================================================
-
-    return jsonify({
-        "response": response,
-        "memory_stored": len(
-            stored_memories
-        ) > 0,
-        "stored_memories": stored_memories,
-        "memories_used": len(ranked),
-        "memories": ranked,
-        "prompt": prompt,
-    })
-# ==================================================
-# Store Memory
-# ==================================================
-
-@app.route("/memory", methods=["POST"])
-@login_required
-def add_memory():
-
-    data = request.get_json()
-
-    if not data:
-
-        return jsonify(
-            {
-                "error": "Invalid JSON"
-            }
-        ), 400
-
-    text = data.get("text")
-
-    if not text:
-
-        return jsonify(
-            {
-                "error": "Text is required"
-            }
-        ), 400
-
-    memory_type = data.get(
-        "memory_type",
-        "conversation",
-    )
-
-    importance = float(
-        data.get(
-            "importance",
-            0.5,
-        )
-    )
-
-    confidence = float(
-        data.get(
-            "confidence",
-            0.9,
-        )
-    )
-
-    user_id = request.user["user_id"]
-
-    embedding = embedding_model.encode(
-        text
-    ).tolist()
-
-    if memory_store.is_duplicate(
-        user_id,
-        embedding,
-    ):
-
-        return jsonify(
-            {
-                "message": "Duplicate memory ignored"
-            }
-        )
-
-    memory_id = memory_store.add_memory(
-        user_id=user_id,
-        text=text,
-        embedding=embedding,
-        memory_type=memory_type,
-        importance=importance,
-        confidence=confidence,
-    )
-
-    logger.log_memory_added(
-        user_id,
-        memory_id,
-        memory_type,
-    )
-
-    return jsonify(
-        {
-            "memory_id": memory_id,
-            "status": "stored",
-        }
-    )
-
-
-# ==================================================
-# Retrieve Memories
-# ==================================================
-
-@app.route("/retrieve", methods=["POST"])
-@login_required
-def retrieve_memory():
-
-    data = request.get_json()
-
-    if not data:
-
-        return jsonify(
-            {
-                "error": "Invalid JSON"
-            }
-        ), 400
-
-    query = data.get("query")
-
-    if not query:
-
-        return jsonify(
-            {
-                "error": "Query is required"
-            }
-        ), 400
-
-    user_id = request.user["user_id"]
-
-    top_k = int(
-        data.get(
-            "top_k",
-            5,
-        )
-    )
-
-    memories = retriever.retrieve(
-        query=query,
-        user_id=user_id,
-        top_k=top_k,
-    )
-
-    ranked = ranker.rank(
-        memories
-    )
-
-    logger.log_retrieval(
-        user_id,
-        query,
-        len(ranked),
-    )
-
-    return jsonify(ranked)
-
-
-# ==================================================
-# Build Prompt
-# ==================================================
-
-@app.route("/context", methods=["POST"])
-@login_required
-def build_context():
-
-    data = request.get_json()
-
-    if not data:
-
-        return jsonify(
-            {
-                "error": "Invalid JSON"
-            }
-        ), 400
-
-    query = data.get("query")
-
-    if not query:
-
-        return jsonify(
-            {
-                "error": "Query is required"
-            }
-        ), 400
-
-    user_id = request.user["user_id"]
-
-    memories = retriever.retrieve(
-        query=query,
-        user_id=user_id,
-        top_k=10,
-    )
-
-    ranked = ranker.rank(
-        memories
-    )
-
-    prompt = builder.build_prompt(
-        query,
-        ranked,
-    )
-
-    stats = builder.get_stats(
-        prompt
-    )
-
-    return jsonify(
-        {
-            "prompt": prompt,
-            "stats": stats,
-        }
-    )
-
-
-# ==================================================
-# Reflection
-# ==================================================
-
-@app.route("/reflection", methods=["POST"])
-@login_required
-def run_reflection():
-
-    user_id = request.user["user_id"]
-
-    summary = reflection.run(
-        user_id
-    )
-
-    logger.log_reflection(
-        user_id,
-        summary,
-    )
-
-    return jsonify(summary)
-
-
-# ==================================================
-# List Memories
-# ==================================================
-
-@app.route("/memories", methods=["GET"])
-@login_required
-def list_memories():
-
-    user_id = request.user["user_id"]
-
-    memories = memory_store.list_memories(
-        user_id
-    )
-
-    return jsonify(memories)
-
-
-# ==================================================
-# Delete Memory
-# ==================================================
-
-@app.route("/memory/<memory_id>", methods=["DELETE"])
-@login_required
-def delete_memory(memory_id):
-
-    success = memory_store.delete_memory(
-        memory_id
-    )
-
-    if not success:
-
-        return jsonify(
-            {
-                "error": "Memory not found"
-            }
-        ), 404
-
-    logger.log_memory_deleted(
-        request.user["user_id"],
-        memory_id,
-    )
-
-    return jsonify(
-        {
-            "status": "deleted"
-        }
-    )
-
-
-# ==================================================
-# Main
-# ==================================================
 
 if __name__ == "__main__":
-
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=True,
-    )
+    create_app().run(host="127.0.0.1", port=5000, debug=False)

@@ -5,6 +5,7 @@ Central configuration for the Conversational Memory System.
 """
 
 from pathlib import Path
+import os
 
 # ==========================
 # Paths
@@ -12,7 +13,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
-CHROMA_DB_PATH = BASE_DIR / "../chromadb"
+CHROMA_DB_PATH = Path(os.environ.get("RECALLGUARD_DB_PATH", str(BASE_DIR / "../chromadb")))
 
 # ==========================
 # Collection

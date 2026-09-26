@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "scope": "One synthetic live scenario; not a broad response-quality benchmark",
+  "model": "llama3.2:3b",
+  "initial_response": "You prefer Python for programming.",
+  "corrected_response": "You prefer Rust for programming."
+}

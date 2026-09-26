@@ -1,3 +1,5 @@
+> Historical report — superseded by verification/results/current_verification.md and verification/final_verification.pdf. Prior PASS statements are not current release sign-off.
+
 # Test Results
 
 ## Project

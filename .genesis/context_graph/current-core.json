@@ -1,0 +1,64 @@
+{
+  "date": "2026-09-26",
+  "nodes": [
+    "app",
+    "auth",
+    "service",
+    "memory_store",
+    "retrieval",
+    "ranking",
+    "context_builder",
+    "reflection",
+    "embeddings",
+    "llm"
+  ],
+  "edges": [
+    [
+      "app",
+      "auth"
+    ],
+    [
+      "app",
+      "service"
+    ],
+    [
+      "service",
+      "memory_store"
+    ],
+    [
+      "service",
+      "retrieval"
+    ],
+    [
+      "service",
+      "ranking"
+    ],
+    [
+      "service",
+      "context_builder"
+    ],
+    [
+      "service",
+      "reflection"
+    ],
+    [
+      "retrieval",
+      "memory_store"
+    ],
+    [
+      "service",
+      "embeddings"
+    ],
+    [
+      "service",
+      "llm"
+    ]
+  ],
+  "invariants": [
+    "owner required for object operations",
+    "service policy before embeddings/storage",
+    "no default database in tests",
+    "expired records excluded before top-k",
+    "independent verification remains pending"
+  ]
+}

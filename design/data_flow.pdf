@@ -1,53 +1,74 @@
-User sends message
+%PDF-1.4
+%���� ReportLab Generated PDF document (opensource)
+1 0 obj
+<<
+/F1 2 0 R /F2 3 0 R
+>>
+endobj
+2 0 obj
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
+endobj
+3 0 obj
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
+endobj
+4 0 obj
+<<
+/Contents 8 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 7 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
 
-↓
+>> 
+  /Type /Page
+>>
+endobj
+5 0 obj
+<<
+/PageMode /UseNone /Pages 7 0 R /Type /Catalog
+>>
+endobj
+6 0 obj
+<<
+/Author (RecallGuard project) /CreationDate (D:20260926131844+05'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260926131844+05'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (\(unspecified\)) /Title (RecallGuard data flow) /Trapped /False
+>>
+endobj
+7 0 obj
+<<
+/Count 1 /Kids [ 4 0 R ] /Type /Pages
+>>
+endobj
+8 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ] /Length 1537
+>>
+stream
+Gatm:@;jmY&H1HmE?DlfQ6f[7ljXu^/a8QE=LZl6f7>9p0l'\:8BS)jrV.B^`KJ\>6d`\7@Z/aL]6iufR6aH;/H4`Li5[_!hIM`0Yhh]I,R(:<i+Dq^HbKoL=%V(.:$/K=>?jHl/;dGr6aA*Ul"UOu5.lu"Z&9Um.p-SS]L0u/qRL$8^q]@HX2N#F4`FmC/0:UNVP8c,c-'h4Rc`]jYl4XgDn?E!!\T@AZHTMpLToH>gYX[0YY2JUC#b?higLXGFBRa-$V9j\C0Ab(RHLW&._X%aKd$Yj]qMO6:i<uQeR%;hQtNX'ju<A?K0GX[o*b&ha>-@JahtlT"CYr(>BL,t$IY5l%_QZ(GD"`tUYo:$!T$kGbST4GnO+q)`RC)rr(!>+=TUN(CF-O`TMZYTJtnSPa7.8-+5gLVbk$A5(=j;uFFR]hqY+4HisDRpEUj49`p^/&Ou&.#bcsLh060uO>(#FKKDe_OeW#=d;j,301-;\dAgb8Si3[+QUTI(E+-9iI_N0ZQLOpnJ$1/jS:o*!Gme9`$C;Tb$dR(W5+_5`QYPto87PbU12k!X7*=0[;R7>MsV#$VFEN%*u)<qWJdFFr/;?"aanSJ-d#pmmp(u/T*I#@>IrG&nc&_rM),Y$tL4TbEbeCGVD@MKDKZ:0]1gQup85!&G+i`R(cgb=Ka5hCIH<#sh-MPT2_MkO`VB^)7JaXr4q5m$bB&0nS*ON2oqK*?.-'Eaf;Pt8=./?AI\1>8+m&h#q8l)diWZXH/%;P7'MUUe`TqCjTdGj*q[&bkK<0BQQ@WJLSCMPqR7M:Rh*.Ab&4>PC[9`$tO5][aMn9uRT9.^i1bCnO.B5R5-72H!+r!je`2;cr&skJB*H'8>11SZ@dji^TcXQp74NbnG?rd-!.-@T>UgD\DH(l?gagrbdhqolE;31j6[E?bl(%:cYIWL^0Gr+%KhF\3"Q/'`HIje\,(3_)tbe2t_87m9^&^$IfD^)"P,tkb(6\'$?Wjh4@)=.kZnBY@=UN*(Y0qYjEQoU?Ce9EAUCRZn*UA=<F/rba,;i\D-=F:5cHB<HnXB7P_$H4>;4&c>]m&a)G:2mR1dS+fB%qIR4:4+.Ot/1m[/Q\s]P3%o^\_7;%OkQbgFSY?q@?fW*1hh+fX.b"i=hML[<%80Zja/jLhD$j:`O#Wt%qd_UlWJSpInVM.G?f27YalZ+%8/rJi(QFr4D?JjPoXD^9cj4gC+)/V8ABt1.%]b!N*cTWF?1phHWkp_IH<_2"T@*.l!M.pM!X`UM)YdNKmUt0(\U^M;`]`"Gj:c+&-G"9K%$L?NiOa^:L'udP<(/)1,LJA-(X[T$-:$'EtHCgDJ7W_3h:L._fs35jr5'[t?EfT%uO.g![M?jLuqs4-g^YK?:Q-Q<fpu.+'BIG($;TIN_(`]AUEuMVI$NsMc#dgqhmZ5BUQ!n-8l%d)Oobo"IC&T.&A2?>Q97#F-s77P99P[)uGKfI.0ocJth-P6+kZihRi'dP>*CcJ0=NtZpc*@duhVUVh2L?WoLOB,hB6`qgkgo+h~>endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000061 00000 n 
+0000000102 00000 n 
+0000000209 00000 n 
+0000000321 00000 n 
+0000000524 00000 n 
+0000000592 00000 n 
+0000000886 00000 n 
+0000000945 00000 n 
+trailer
+<<
+/ID 
+[<99cb2c4cc76af85ed7975ef7dcec7b85><99cb2c4cc76af85ed7975ef7dcec7b85>]
+% ReportLab generated PDF document -- digest (opensource)
 
-Extract candidate memory
-
-↓
-
-Classify memory
-
-↓
-
-PII Filter
-
-↓
-
-Embedding
-
-↓
-
-Store in ChromaDB
-
-↓
-
-User asks another question
-
-↓
-
-Generate embedding
-
-↓
-
-Search ChromaDB
-
-↓
-
-Rank memories
-
-↓
-
-Select top memories
-
-↓
-
-Build Prompt
-
-↓
-
-LLM
-
-↓
-
-Response
+/Info 6 0 R
+/Root 5 0 R
+/Size 9
+>>
+startxref
+2573
+%%EOF

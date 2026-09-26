@@ -4,7 +4,7 @@ ranking.py
 Ranks retrieved memories using multiple signals.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 
@@ -34,9 +34,11 @@ class MemoryRanker:
             created = datetime.fromisoformat(
                 created_at
             )
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
 
             age = (
-                datetime.utcnow() - created
+                datetime.now(timezone.utc) - created
             ).days
 
         except Exception:

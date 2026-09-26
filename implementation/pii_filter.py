@@ -27,6 +27,7 @@ class PIIFilter:
             self.CREDIT_CARD,
             self.AADHAR,
             self.PAN,
+            r"(?i)\b(?:password|secret|api[_ -]?key|verification code|otp)\s*(?:is|:|=)\s*\S+",
         ]
 
         return any(

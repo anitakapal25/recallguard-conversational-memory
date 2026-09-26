@@ -2,3 +2,13 @@ venv/
 .env
 __pycache__/
 *.pyc
+.runtime/
+.pytest_cache/
+tmp/
+.venv/
+chromadb/
+implementation/chromadb/
+logs/
+implementation/logs/
+.env.*
+!.env.example

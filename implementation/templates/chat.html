@@ -1,121 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>RecallGuard</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-</head>
-
-<body>
-
-<div class="app">
-
-    <!-- Header -->
-    <header class="header">
-
-        <div>
-            <h1>RecallGuard</h1>
-
-            <p>
-                Conversational Memory System
-            </p>
-        </div>
-
-        <div class="status">
-            <span class="status-dot"></span>
-            Memory Online
-        </div>
-
-    </header>
-
-
-    <!-- Chat -->
-    <main class="chat-container">
-
-        <div
-            id="chatMessages"
-            class="messages"
-        >
-
-            <!-- Initial AI message -->
-            <div class="message assistant">
-
-                <div class="avatar">
-                    AI
-                </div>
-
-                <div class="bubble">
-
-                    <p>
-                        Hello! I'm RecallGuard.
-                    </p>
-
-                    <p>
-                        I can remember useful information
-                        from our conversations.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- Typing indicator -->
-        <div
-            id="typingIndicator"
-            class="typing hidden"
-        >
-
-            <span></span>
-            <span></span>
-            <span></span>
-
-        </div>
-
-
-        <!-- Input -->
-        <div class="input-area">
-
-            <textarea
-                id="messageInput"
-                placeholder="Type a message..."
-                rows="1"
-            ></textarea>
-
-            <button
-                id="sendButton"
-                onclick="sendMessage()"
-            >
-                Send
-            </button>
-
-        </div>
-
-
-        <div class="hint">
-            Press Enter to send • Shift + Enter for a new line
-        </div>
-
-    </main>
-
-</div>
-
-
-<script src="{{ url_for('static', filename='chat.js') }}"></script>
-
-</body>
-
-</html>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RecallGuard | Memory laboratory</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><header><div><h1>RecallGuard</h1><p>Inspect what is remembered, retrieved, corrected and forgotten.</p></div><span id="status">Checking service…</span></header>
+<main>
+<section class="access"><label>API key <input type="password" id="apiKey" autocomplete="off" placeholder="Your configured key"></label>
+<button id="connect">Load my memories</button><button id="newSession">New conversation</button>
+<p>Keys stay in this page's memory only. New memories expire after seven days. Supported sensitive patterns are rejected; this is not comprehensive PII detection.</p></section>
+<div class="workspace">
+<section><h2>Playground</h2><div id="messages" class="messages" aria-live="polite"></div>
+<label for="messageInput">Message</label><textarea id="messageInput" maxlength="4000" rows="3" placeholder="I live in Bangalore."></textarea>
+<label class="check"><input type="checkbox" id="remember"> I consent to saving extracted memories for up to seven days.</label>
+<button id="send">Send</button><p>Local generation uses Ollama. Memory operations remain available if generation is offline.</p>
+<h3>Request inspector</h3><pre id="trace">Send a message or search to inspect the response.</pre></section>
+<section><h2>Memory explorer</h2><label for="query">Search my memories</label><input id="query" maxlength="4000" placeholder="Where do I live?">
+<button id="search">Search</button><button id="refresh">Show all</button><button id="reflect">Run maintenance</button>
+<p>Use Edit to explicitly confirm a correction. Delete permanently removes the stored record and vector through the database API.</p>
+<div id="memories" aria-live="polite"></div></section>
+</div><p id="notice" role="status"></p>
+<footer>Handbook core demonstration · API: /memory, /memories, /retrieve, /context, /chat, /reflection · See README for limits and evaluation commands.</footer>
+</main><script src="/static/chat.js"></script></body></html>

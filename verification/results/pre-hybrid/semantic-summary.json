@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-09-25T17:00:38.957181+00:00",
+  "python": "3.14.4",
+  "chromadb": "1.5.9",
+  "encoder": "all-MiniLM-L6-v2",
+  "dataset_sha256": "6a82531fb6f9e29ef963576a4a39ecc1aa6f7442afd0a088f7e9195be2b695a3",
+  "scope": "Offline retrieval/policy benchmark. No generated-response quality or model-token measurement.",
+  "latency_scope": "7 retrieval calls per case, first call included; no LLM or model startup time.",
+  "results": {
+    "baseline": {
+      "passed": 5,
+      "total": 16,
+      "mean_precision_at_k": 0.5,
+      "mean_recall_at_k": 0.6875
+    },
+    "improved": {
+      "passed": 14,
+      "total": 16,
+      "mean_precision_at_k": 0.9375,
+      "mean_recall_at_k": 0.9166666666666666
+    }
+  }
+}

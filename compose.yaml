@@ -1,0 +1,16 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      RECALLGUARD_API_KEYS: ${RECALLGUARD_API_KEYS:?Set a private API-key mapping}
+      RECALLGUARD_DB_PATH: /data/chroma
+      OLLAMA_HOST: http://host.docker.internal:11434
+    volumes:
+      - memory-data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+volumes:
+  memory-data:

@@ -1,0 +1,12 @@
+.git
+.runtime
+.venv
+chromadb
+implementation/chromadb
+logs
+implementation/logs
+tmp
+.env
+.env.*
+__pycache__
+.pytest_cache
