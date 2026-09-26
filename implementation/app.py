@@ -1,6 +1,7 @@
 """Flask app factory. Production invocation: waitress-serve --call app:create_app."""
 import time
 import uuid
+import os
 from flask import Flask, g, jsonify, render_template, request
 from werkzeug.exceptions import HTTPException
 from auth import AuthManager, login_required
@@ -11,17 +12,25 @@ def create_app(service=None, api_keys=None):
     app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
     app.extensions["auth"] = AuthManager(api_keys)
     if service is None:
-        from embeddings import SentenceEncoder
-        from llm import LocalLLM
         from memory_store import MemoryStore
         from service import MemoryService
-        service = MemoryService(MemoryStore(), SentenceEncoder(), LocalLLM())
+        if os.environ.get("RECALLGUARD_RUNTIME", "local") == "cloud":
+            from cloud import SupabaseCollection, CloudEncoder, GroqLLM
+            service = MemoryService(MemoryStore(collection=SupabaseCollection()), CloudEncoder(), GroqLLM())
+        else:
+            from embeddings import SentenceEncoder
+            from llm import LocalLLM
+            service = MemoryService(MemoryStore(), SentenceEncoder(), LocalLLM())
     app.extensions["memory_service"] = service
 
     @app.before_request
     def begin():
         g.request_id = str(uuid.uuid4())
         g.started = time.perf_counter()
+
+    if os.environ.get("RECALLGUARD_RUNTIME") == "cloud":
+        from limits import install_limits
+        install_limits(app)
 
     @app.after_request
     def finish(response):
@@ -55,7 +64,7 @@ def create_app(service=None, api_keys=None):
 
     @app.get("/")
     def home():
-        return render_template("chat.html")
+        return render_template("chat.html", cloud_runtime=os.environ.get("RECALLGUARD_RUNTIME") == "cloud")
 
     @app.get("/health")
     def health():

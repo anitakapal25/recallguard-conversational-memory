@@ -10,7 +10,7 @@
 <section><h2>Playground</h2><div id="messages" class="messages" aria-live="polite"></div>
 <label for="messageInput">Message</label><textarea id="messageInput" maxlength="4000" rows="3" placeholder="I live in Bangalore."></textarea>
 <label class="check"><input type="checkbox" id="remember"> I consent to saving extracted memories for up to seven days.</label>
-<button id="send">Send</button><p>Local generation uses Ollama. Memory operations remain available if generation is offline.</p>
+<button id="send">Send</button><p>{% if cloud_runtime %}Generation uses Groq. Your message and retrieved memories are sent to Groq; saved memories are stored in Supabase. Demo usage limits apply.{% else %}Local generation uses Ollama.{% endif %} Memory operations remain available if generation is offline.</p>
 <h3>Request inspector</h3><pre id="trace">Send a message or search to inspect the response.</pre></section>
 <section><h2>Memory explorer</h2><label for="query">Search my memories</label><input id="query" maxlength="4000" placeholder="Where do I live?">
 <button id="search">Search</button><button id="refresh">Show all</button><button id="reflect">Run maintenance</button>

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: recallguard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r deployment/requirements-cloud.txt && python deployment/cache_model.py
+    startCommand: python deployment/serve_cloud.py
+    healthCheckPath: /ready
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: RECALLGUARD_RUNTIME
+        value: cloud
+      - key: SUPABASE_URL
+        value: https://uacsiisnqwcmmbznhece.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.1-8b-instant
+      - key: RECALLGUARD_API_KEYS
+        sync: false

@@ -1,6 +1,8 @@
 .git
 .runtime
 .venv
+.venv-cloud
+model-cache
 chromadb
 implementation/chromadb
 logs

@@ -6,6 +6,8 @@ __pycache__/
 .pytest_cache/
 tmp/
 .venv/
+.venv-cloud/
+model-cache/
 chromadb/
 implementation/chromadb/
 logs/

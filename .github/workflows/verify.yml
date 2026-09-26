@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
-      - run: pip install Flask==3.1.2 chromadb==1.5.9 numpy==2.5.1 pytest==8.4.2
+      - run: pip install Flask==3.1.2 chromadb==1.5.9 numpy==2.5.1 pytest==8.4.2 requests==2.34.2
       - run: python -m pytest -q --junitxml=verification/results/core-tests.xml
       - run: python contribution/verify_memory_contract.py
       - run: python verification/run_evaluation.py
