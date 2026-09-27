@@ -89,7 +89,7 @@ class CloudEncoder:
 class GroqLLM:
     def __init__(self, key=None, transport=None):
         self.key = key or os.environ["GROQ_API_KEY"]
-        self.model = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
+        self.model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
         self.transport = transport or requests
 
     def generate(self, prompt):

@@ -2,7 +2,7 @@
 A local conversational-memory service with a Flask playground, owner-scoped Chroma storage, explicit correction, deletion, retention, and reproducible verification.
 
 ## Current status
-This revision implements the handbook's core memory paths. It is **not a completed eight-deliverable submission or a verified public production deployment**.
+This revision implements the handbook's core memory paths. The public demo is live at https://recallguard-core.onrender.com; greeting and memory-grounded Groq chat were verified on 2026-09-27. It is **not a completed eight-deliverable submission or a production release approval**.
 See [current verification](verification/results/current_verification.md) and [handbook gap ledger](verification/handbook_gap_ledger.md).
 Historical PASS reports predate this revision and are not current release approval.
 
