@@ -87,7 +87,7 @@ $("send").onclick = () => run(async () => {
   message("RecallGuard", data.response || "Generation is unavailable. Inspect memory decisions below.");
   $("messageInput").value = "";
   await refresh(); inspect(data);
-  notice(data.generation_status === "unavailable" ? "Ollama is unavailable. Memory write outcomes are shown in the inspector." : "Request completed.");
+  notice(data.generation_status === "unavailable" ? "Generation is unavailable. Memory write outcomes are shown in the inspector." : "Request completed.");
 });
 $("search").onclick = () => run(async () => {
   const data = await api("/retrieve", "POST", {query:$("query").value,top_k:5}); renderMemories(data); notice("Search completed.");
